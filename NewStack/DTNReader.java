@@ -7,7 +7,7 @@ import StateManagement.ContentState;
 import StateManagement.StateManager;
 import StateManagement.Status;
 import prototype.datastore.DataStore;
-import javax.swing.* ;
+//import javax.swing.* ;
 public class DTNReader extends Thread {
 	String osName ;
 	String dirPathinLin ;
@@ -124,7 +124,9 @@ public class DTNReader extends Thread {
 									}
 								}
 								System.out.println("Now you can remove your drive");	
-								JOptionPane.showMessageDialog(null, "Safely Remove USBdrive");
+								//JFrame parent = new JFrame();
+
+							    //JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
 							} 
 							catch (IOException e) 
 							{
@@ -328,7 +330,8 @@ public class DTNReader extends Thread {
 								}
 							}
 						}catch(Exception e){ 
-							System.out.println("Exception in dtnFileRead DTNReader");
+							e.printStackTrace();
+							System.err.println("Exception in dtnFileRead DTNReader");
 						}
 					}
 
@@ -338,8 +341,8 @@ public class DTNReader extends Thread {
 
 			}
 			catch(Exception e){				
-				//e.printStackTrace();
-				System.out.println("Exception in DTNReader in dtnFile Read just before finally");
+				e.printStackTrace();
+				System.err.println("Exception in DTNReader in dtnFile Read just before finally");
 			}
 			finally{
 				try{
@@ -348,7 +351,8 @@ public class DTNReader extends Thread {
 						flag = true ;
 					}	
 				}catch(Exception e){
-					System.out.println("Exception in DTNReader.java finally block : objectIn not found");
+					e.printStackTrace();
+					System.err.println("Exception in DTNReader.java finally block : objectIn not found");
 
 				}
 			}

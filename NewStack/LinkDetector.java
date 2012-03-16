@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 import NewStack.Packet;
 import StateManagement.ContentState;
@@ -231,7 +231,9 @@ public class LinkDetector extends Thread{
 		dtnDestinationIds.remove(destination);
 		scheduler.removeDTNConnection(connectionInfo[0]);
 		System.out.println("Safely remove the drive");
-		JOptionPane.showMessageDialog(null,"Safely remove the drive");
+		JFrame parent = new JFrame();
+
+	    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
 	}
 	public static void setDestinationIds(List<String> destinationIds)
 	{

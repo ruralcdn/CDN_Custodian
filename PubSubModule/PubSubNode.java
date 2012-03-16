@@ -38,12 +38,15 @@ public class PubSubNode implements IPubSubNode{
 						String usernode = st.getUserLocation(notificationContent[0]);
                                                 
 						Registry userRegistry = LocateRegistry.getRegistry(usernode);
-						System.out.println("");
-						System.out.println("userNode = " + usernode);
-						System.out.println("");
+						
+						System.out.println("Inside PubSubNode.java");
+						//System.out.println("userNode = " + usernode);
+						//System.out.println("");
 						
 						IAppFetcher appFetcherStub = (IAppFetcher) userRegistry.lookup("appfetcher");
-						System.out.println("In pubSubNode, value of appFetcher: "+appFetcherStub);//to be commented
+						
+						//System.out.println("In pubSubNode, value of appFetcher: "+appFetcherStub);//to be commented
+						
 						Notification notif = new Notification(Notification.Type.UploadAck,notificationContent[1]);
 						appFetcherStub.uploadNotify(notif);
 						flag = true ;
