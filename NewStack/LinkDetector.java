@@ -230,9 +230,9 @@ public class LinkDetector extends Thread{
 		String[] connectionInfo = destination.split(":");
 		dtnDestinationIds.remove(destination);
 		scheduler.removeDTNConnection(connectionInfo[0]);
+		
 		System.out.println("Safely remove the drive");
 		JFrame parent = new JFrame();
-
 	    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
 	}
 	public static void setDestinationIds(List<String> destinationIds)

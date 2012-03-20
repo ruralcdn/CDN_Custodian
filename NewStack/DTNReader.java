@@ -1,13 +1,15 @@
 package NewStack;
 
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import StateManagement.ContentState;
 import StateManagement.StateManager;
 import StateManagement.Status;
 import prototype.datastore.DataStore;
-//import javax.swing.* ;
+import javax.swing.* ;
 public class DTNReader extends Thread {
 	String osName ;
 	String dirPathinLin ;
@@ -112,6 +114,7 @@ public class DTNReader extends Thread {
 										if(dtnFileRead(filePathStr)){
 											System.out.println("File is successfully read");
 											readingList.remove(dataList[j]);
+											System.err.println("Inside DTNReader level 1");
 										}	
 										else{
 											try {
@@ -119,32 +122,49 @@ public class DTNReader extends Thread {
 											} catch (Exception e) {
 												e.printStackTrace();
 											}
+											System.err.println("Inside DTNReader level 2");
 										}	
 										System.out.println("Reading List size is: "+readingList.size());
 									}
+									System.err.println("Inside DTNReader level 3");
 								}
-								System.out.println("Now you can remove your drive");	
-								//JFrame parent = new JFrame();
+								//USB removal notification
+								long time1 = new Date().getTime();
+								System.err.println("Time is:"+ time1);
+								DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+								Date date = new Date();
+								System.err.println(dateFormat.format(date));
+								//
+								
+								JFrame parent = new JFrame();
 
-							    //JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+							    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+							    
+							    System.out.println("Now you can remove your drive-DTNReader");	
+							    //usb removal notification end
 							} 
 							catch (IOException e) 
 							{
 								System.out.println("Error in reading or writing file");
 								try {
 									Thread.sleep(5000);
+									System.err.println("Inside DTNReader level 4");
 								} catch (InterruptedException e1) {
 									e1.printStackTrace();
 								}
 							}
 						}
+						
 						else
 						{
 							System.out.println("Drive "+letters[i]+" has been unplugged");
 						}
+						System.err.println("Inside DTNReader level 5");
 						isDrive[i] = pluggedIn;
 					}
+					//System.err.println("Inside DTNReader level 6");
 				}
+				//System.err.println("Inside DTNReader level 7");
 			}else{
 
 				File dir = new File(dirPathinLin);
@@ -341,7 +361,7 @@ public class DTNReader extends Thread {
 
 			}
 			catch(Exception e){				
-				e.printStackTrace();
+				//e.printStackTrace();
 				System.err.println("Exception in DTNReader in dtnFile Read just before finally");
 			}
 			finally{
