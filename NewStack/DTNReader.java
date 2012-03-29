@@ -136,11 +136,11 @@ public class DTNReader extends Thread {
 								System.err.println(dateFormat.format(date));
 								//
 								
-								JFrame parent = new JFrame();
+								//JFrame parent = new JFrame();
 
-							    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+							    //JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
 							    
-							    System.out.println("Now you can remove your drive-DTNReader");	
+							    //System.out.println("Now you can remove your drive-DTNReader");	
 							    //usb removal notification end
 							} 
 							catch (IOException e) 
@@ -294,22 +294,30 @@ public class DTNReader extends Thread {
 	private boolean dtnFileRead(String filePathStr){
 		boolean flag = false ;
 		File fileRead = new File(filePathStr) ;
-		if(fileRead.exists()){
+		Packet packet= null;
+		byte[] segment;
+		ContentState conProp;
+		BitSet bs;
+		Status st;
+		
+		if(fileRead.exists())
+		{
 			ObjectInputStream objectIn = null ;
-			try{
-				objectIn = new ObjectInputStream(new FileInputStream(filePathStr)) ;
-				while(true){
-
-					Packet packet = (Packet) objectIn.readObject();
+			try
+			{
+				objectIn = new ObjectInputStream(new FileInputStream(filePathStr));
+				while(true)
+				{
+					packet = (Packet) objectIn.readObject();
 					
 					mpContent = StateManager.getDownMap();
 					String data = packet.getName();
 					int offset = packet.getSequenceNumber();
-					byte[] segment = packet.getData();
+					segment = packet.getData();
 					store.write(data, offset, segment);
 
-					ContentState conProp = mpContent.get(data);
-					BitSet bs = conProp.bitMap;
+					conProp = mpContent.get(data);
+					bs = conProp.bitMap;
 					if(stateManager != null)
 					{
 						try	
@@ -331,7 +339,7 @@ public class DTNReader extends Thread {
 								if(currentsegments == conProp.getTotalSegments())
 								{
 									System.out.println("In Reassembler.java Received the Complete File! :D :D :D :D :D :D :D :D :D :D :D :D ");
-									Status st = Status.getStatus();
+									st = Status.getStatus();
 									String fileType = st.getContentType("uploadrequest",data);
 									if(fileDownloads != null)
 									{	if(fileType.length()!=0)
@@ -347,6 +355,11 @@ public class DTNReader extends Thread {
 									objectIn.close();
 									boolean del = fileRead.delete();
 									System.out.println("file is deleted: "+del);
+									JFrame parent = new JFrame();
+
+								    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+								    
+								    System.out.println("Now you can remove your drive-DTNReader");	
 								}
 							}
 						}catch(Exception e){ 
