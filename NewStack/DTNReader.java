@@ -1,8 +1,6 @@
 package NewStack;
 
 import java.io.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import StateManagement.ContentState;
@@ -58,7 +56,7 @@ public class DTNReader extends Thread {
 		while(true)
 		{
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(1000);// previous value 2000
 			} catch (Exception e) {
 
 			}
@@ -111,64 +109,45 @@ public class DTNReader extends Thread {
 										String fileName = dataList[j];
 										filePathStr = filePathStr+fileName;
 										System.out.println("File Name is: "+filePathStr);
-										try{
-											if(dtnFileRead(filePathStr)){										
-												System.out.println("File is successfully read");
-												readingList.remove(dataList[j]);
-												System.err.println("Inside DTNReader level 1");
-											}	
-											else{
-												try {
-													Thread.sleep(2000);
-												} catch (Exception e) {
-													e.printStackTrace();
-												}
-												System.err.println("Inside DTNReader level 2");
+										if(dtnFileRead(filePathStr)){
+											System.out.println("File is successfully read");
+											readingList.remove(dataList[j]);
+										}	
+										else{
+											try {
+												Thread.sleep(1000);//changed 2000 TO 1000
+											} catch (Exception e) {
+												e.printStackTrace();
 											}
-										}catch(Exception ex){
-
-										}
+										}	
 										System.out.println("Reading List size is: "+readingList.size());
 									}
-									System.err.println("Inside DTNReader level 3");
 								}
-								//USB removal notification
-								long time1 = new Date().getTime();
-								System.err.println("Time is:"+ time1);
-								DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-								Date date = new Date();
-								System.err.println(dateFormat.format(date));
-								//
-
-								//JFrame parent = new JFrame();
-
-								//JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
-
-								//System.out.println("Now you can remove your drive-DTNReader");	
-								//usb removal notification end
+								/*System.out.println("Now you can remove your drive");	
+								JFrame parent = new JFrame();
+								
+							    JOptionPane.showMessageDialog(parent, "NSafely Remove");*/
 							} 
 							catch (IOException e) 
 							{
 								System.out.println("Error in reading or writing file");
 								try {
 									Thread.sleep(5000);
-									System.err.println("Inside DTNReader level 4");
 								} catch (InterruptedException e1) {
 									e1.printStackTrace();
 								}
-							}
+							}							
+							//JOptionPane.showMessageDialog(null, "Safely Remove USBdrive");
 						}
-
 						else
 						{
 							System.out.println("Drive "+letters[i]+" has been unplugged");
 						}
-						System.err.println("Inside DTNReader level 5");
 						isDrive[i] = pluggedIn;
 					}
-					//System.err.println("Inside DTNReader level 6");
 				}
-				//System.err.println("Inside DTNReader level 7");
+				
+			    //System.err.println("1");
 			}else{
 
 				File dir = new File(dirPathinLin);
@@ -298,30 +277,22 @@ public class DTNReader extends Thread {
 	private boolean dtnFileRead(String filePathStr){
 		boolean flag = false ;
 		File fileRead = new File(filePathStr) ;
-		Packet packet= null;
-		byte[] segment;
-		ContentState conProp;
-		BitSet bs;
-		Status st;
-
-		if(fileRead.exists())
-		{
+		if(fileRead.exists()){
 			ObjectInputStream objectIn = null ;
-			try
-			{
-				objectIn = new ObjectInputStream(new FileInputStream(filePathStr));
-				while(true)
-				{
-					packet = (Packet) objectIn.readObject();
+			try{
+				objectIn = new ObjectInputStream(new FileInputStream(filePathStr)) ;
+				while(true){
 
+					Packet packet = (Packet) objectIn.readObject();
+					
 					mpContent = StateManager.getDownMap();
 					String data = packet.getName();
 					int offset = packet.getSequenceNumber();
-					segment = packet.getData();
+					byte[] segment = packet.getData();
 					store.write(data, offset, segment);
 
-					conProp = mpContent.get(data);
-					bs = conProp.bitMap;
+					ContentState conProp = mpContent.get(data);
+					BitSet bs = conProp.bitMap;
 					if(stateManager != null)
 					{
 						try	
@@ -343,7 +314,7 @@ public class DTNReader extends Thread {
 								if(currentsegments == conProp.getTotalSegments())
 								{
 									System.out.println("In Reassembler.java Received the Complete File! :D :D :D :D :D :D :D :D :D :D :D :D ");
-									st = Status.getStatus();
+									Status st = Status.getStatus();
 									String fileType = st.getContentType("uploadrequest",data);
 									if(fileDownloads != null)
 									{	if(fileType.length()!=0)
@@ -359,16 +330,14 @@ public class DTNReader extends Thread {
 									objectIn.close();
 									boolean del = fileRead.delete();
 									System.out.println("file is deleted: "+del);
+									System.out.println("Now you can remove your drive");	
 									JFrame parent = new JFrame();
-
-									JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
-
-									System.out.println("Now you can remove your drive-DTNReader");	
+									
+								    JOptionPane.showMessageDialog(parent, "NSafely Remove");
 								}
 							}
 						}catch(Exception e){ 
-							//e.printStackTrace();
-							System.err.println("Exception in dtnFileRead DTNReader");
+							System.out.println("Exception in dtnFileRead DTNReader");
 						}
 					}
 
@@ -379,7 +348,7 @@ public class DTNReader extends Thread {
 			}
 			catch(Exception e){				
 				//e.printStackTrace();
-				System.err.println("Exception in DTNReader in dtnFile Read just before finally");
+				System.out.println("Exception in DTNReader in dtnFile Read just before finally");
 			}
 			finally{
 				try{
@@ -388,8 +357,7 @@ public class DTNReader extends Thread {
 						flag = true ;
 					}	
 				}catch(Exception e){
-					e.printStackTrace();
-					System.err.println("Exception in DTNReader.java finally block : objectIn not found");
+					System.out.println("Exception in DTNReader.java finally block : objectIn not found");
 
 				}
 			}
