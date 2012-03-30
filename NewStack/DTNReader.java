@@ -111,19 +111,23 @@ public class DTNReader extends Thread {
 										String fileName = dataList[j];
 										filePathStr = filePathStr+fileName;
 										System.out.println("File Name is: "+filePathStr);
-										if(dtnFileRead(filePathStr)){
-											System.out.println("File is successfully read");
-											readingList.remove(dataList[j]);
-											System.err.println("Inside DTNReader level 1");
-										}	
-										else{
-											try {
-												Thread.sleep(2000);
-											} catch (Exception e) {
-												e.printStackTrace();
+										try{
+											if(dtnFileRead(filePathStr)){										
+												System.out.println("File is successfully read");
+												readingList.remove(dataList[j]);
+												System.err.println("Inside DTNReader level 1");
+											}	
+											else{
+												try {
+													Thread.sleep(2000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+												System.err.println("Inside DTNReader level 2");
 											}
-											System.err.println("Inside DTNReader level 2");
-										}	
+										}catch(Exception ex){
+
+										}
 										System.out.println("Reading List size is: "+readingList.size());
 									}
 									System.err.println("Inside DTNReader level 3");
@@ -135,13 +139,13 @@ public class DTNReader extends Thread {
 								Date date = new Date();
 								System.err.println(dateFormat.format(date));
 								//
-								
+
 								//JFrame parent = new JFrame();
 
-							    //JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
-							    
-							    //System.out.println("Now you can remove your drive-DTNReader");	
-							    //usb removal notification end
+								//JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+
+								//System.out.println("Now you can remove your drive-DTNReader");	
+								//usb removal notification end
 							} 
 							catch (IOException e) 
 							{
@@ -154,7 +158,7 @@ public class DTNReader extends Thread {
 								}
 							}
 						}
-						
+
 						else
 						{
 							System.out.println("Drive "+letters[i]+" has been unplugged");
@@ -299,7 +303,7 @@ public class DTNReader extends Thread {
 		ContentState conProp;
 		BitSet bs;
 		Status st;
-		
+
 		if(fileRead.exists())
 		{
 			ObjectInputStream objectIn = null ;
@@ -309,7 +313,7 @@ public class DTNReader extends Thread {
 				while(true)
 				{
 					packet = (Packet) objectIn.readObject();
-					
+
 					mpContent = StateManager.getDownMap();
 					String data = packet.getName();
 					int offset = packet.getSequenceNumber();
@@ -357,13 +361,13 @@ public class DTNReader extends Thread {
 									System.out.println("file is deleted: "+del);
 									JFrame parent = new JFrame();
 
-								    JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
-								    
-								    System.out.println("Now you can remove your drive-DTNReader");	
+									JOptionPane.showMessageDialog(parent, "Now you can remove your drive");
+
+									System.out.println("Now you can remove your drive-DTNReader");	
 								}
 							}
 						}catch(Exception e){ 
-							e.printStackTrace();
+							//e.printStackTrace();
 							System.err.println("Exception in dtnFileRead DTNReader");
 						}
 					}
