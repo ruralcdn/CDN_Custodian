@@ -1,5 +1,9 @@
 package NewStack;
 
+import java.awt.Image;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -7,7 +11,9 @@ import StateManagement.ContentState;
 import StateManagement.StateManager;
 import StateManagement.Status;
 import prototype.datastore.DataStore;
-import javax.swing.* ;
+//import javax.swing.* ;
+
+
 public class DTNReader extends Thread {
 	String osName ;
 	String dirPathinLin ;
@@ -125,7 +131,7 @@ public class DTNReader extends Thread {
 								}
 								/*System.out.println("Now you can remove your drive");	
 								JFrame parent = new JFrame();
-								
+
 							    JOptionPane.showMessageDialog(parent, "NSafely Remove");*/
 							} 
 							catch (IOException e) 
@@ -146,8 +152,8 @@ public class DTNReader extends Thread {
 						isDrive[i] = pluggedIn;
 					}
 				}
-				
-			    //System.err.println("1");
+
+				//System.err.println("1");
 			}else{
 
 				File dir = new File(dirPathinLin);
@@ -274,17 +280,29 @@ public class DTNReader extends Thread {
 	}
 
 
-	private boolean dtnFileRead(String filePathStr){
+	private boolean dtnFileRead(String filePathStr)
+	{
+		System.out.println("Start Dtnreader");
 		boolean flag = false ;
 		File fileRead = new File(filePathStr) ;
-		if(fileRead.exists()){
-			ObjectInputStream objectIn = null ;
+		if(fileRead.exists())
+		{
+			//ObjectInputStream objectIn = null ;
+			//FileInputStream objectIn = null ;
+			FileInputStream fin = null;
+			ObjectInputStream ois = null;
 			try{
-				objectIn = new ObjectInputStream(new FileInputStream(filePathStr)) ;
-				while(true){
+				//objectIn = new ObjectInputStream(new FileInputStream(filePathStr)) ;
+				//objectIn = new FileInputStream(filePathStr) ;
 
-					Packet packet = (Packet) objectIn.readObject();
-					
+				fin = new FileInputStream(filePathStr);					
+				ois = new ObjectInputStream(fin);//error here					
+
+				while(true)
+				{
+
+					Packet packet = (Packet) ois.readObject();
+					//Packet packet = (Packet) objectIn.readObject();
 					mpContent = StateManager.getDownMap();
 					String data = packet.getName();
 					int offset = packet.getSequenceNumber();
@@ -295,73 +313,212 @@ public class DTNReader extends Thread {
 					BitSet bs = conProp.bitMap;
 					if(stateManager != null)
 					{
+
 						try	
 						{
 							int currentsegments = conProp.currentSegments;
-							if(currentsegments == conProp.getTotalSegments()){
+							if(currentsegments == conProp.getTotalSegments())
+							{
 
 							}
 							else
 							{
 								if(bs.get((int) (offset/segmentSize))==false)
 								{
+
 									currentsegments++;
 									bs.set((int) (offset/segmentSize));
 								}
 								conProp.currentSegments = currentsegments;
 								conProp.bitMap = bs ;
 								mpContent.put(data,conProp);
+
 								if(currentsegments == conProp.getTotalSegments())
 								{
 									System.out.println("In Reassembler.java Received the Complete File! :D :D :D :D :D :D :D :D :D :D :D :D ");
 									Status st = Status.getStatus();
 									String fileType = st.getContentType("uploadrequest",data);
 									if(fileDownloads != null)
-									{	if(fileType.length()!=0)
-										fileDownloads.put(data+"."+fileType);
-									else
-										fileDownloads.put(data);
+									{
+
+										if(fileType.length()!=0){
+
+											fileDownloads.put(data+"."+fileType);
+										}												
+										else{
+
+											fileDownloads.put(data);
+										}
 									}	
-									if(fileType.length()!=0)
+									if(fileType.length()!=0){
+
 										st.insertData("localdata", data+"."+fileType);
-									else
+									}
+									else{
+
 										st.insertData("localdata", data);
+									}
+
 									st.updateState("status",data, 0); 
-									objectIn.close();
+									//objectIn.close();
+									ois.close();
 									boolean del = fileRead.delete();
 									System.out.println("file is deleted: "+del);
 									System.out.println("Now you can remove your drive");	
-									JFrame parent = new JFrame();
-									
-								    JOptionPane.showMessageDialog(parent, "NSafely Remove");
+
+									//code for system TrayIcon
+
+									Toolkit toolkit = Toolkit.getDefaultToolkit();
+									Image image = toolkit.getImage("E:/logo_usb.jpg");
+									TrayIcon trayIcon = new TrayIcon(image, "TrayIcon");
+
+									SystemTray tray = SystemTray.getSystemTray();
+									try
+									{
+										tray.add(trayIcon);
+									}
+									catch (Exception e)
+									{
+										System.err.println("TrayIcon could not be added.");							           
+									}
+
+									trayIcon.displayMessage("Remove USB", "Please Safely remove your usb Drive", TrayIcon.MessageType.INFO);
+
+									//code end for safely remove drive
 								}
 							}
-						}catch(Exception e){ 
+						}
+						catch(Exception e)
+						{ 
+							//e.printStackTrace();
 							System.out.println("Exception in dtnFileRead DTNReader");
 						}
 					}
 
 				}
 
-			}catch(EOFException e){
-
 			}
-			catch(Exception e){				
+			catch(EOFException e)
+			{
+				//e.printStackTrace();
+			}
+			catch(Exception e)
+			{	
 				//e.printStackTrace();
 				System.out.println("Exception in DTNReader in dtnFile Read just before finally");
 			}
-			finally{
-				try{
-					if(objectIn != null){
-						objectIn.close();
+			finally
+			{	try
+			{	if(ois != null)
+			{	ois.close();
+			flag = true ;
+			}	
+			}
+			catch(Exception e)
+			{	System.out.println("Exception in DTNReader.java finally block : objectIn not found");
+			}
+			}
+		}
+		return flag;
+	}
+}
+
+/*
+	private boolean dtnFileRead(String filePathStr)
+	{
+		boolean flag = false ;
+		File fileRead = new File(filePathStr) ;
+		if(fileRead.exists())
+		{
+			FileInputStream fis = null ;
+			try{
+					fis = new FileInputStream(filePathStr);
+					while(true)
+					{
+						byte[] dataIn = null;
+						int check = fis.read(dataIn);
+						//Packet packet = (Packet) objectIn.readObject();
+						mpContent = StateManager.getDownMap();
+						//String data = packet.getName();
+						//int offset = packet.getSequenceNumber();
+						//byte[] segment = packet.getData();
+						//store.write(data, offset, segment);
+						store.write(dataname, data)
+						//ContentState conProp = mpContent.get(data);
+						//BitSet bs = conProp.bitMap;
+						if(stateManager != null)
+						{
+							try	
+							{
+								int currentsegments = conProp.currentSegments;
+								if(currentsegments == conProp.getTotalSegments())
+								{
+
+								}
+								else
+								{
+									if(bs.get((int) (offset/segmentSize))==false)
+									{
+										currentsegments++;
+										bs.set((int) (offset/segmentSize));
+									}
+									conProp.currentSegments = currentsegments;
+									conProp.bitMap = bs ;
+									mpContent.put(data,conProp);
+									if(currentsegments == conProp.getTotalSegments())
+									{
+										System.out.println("In Reassembler.java Received the Complete File! :D :D :D :D :D :D :D :D :D :D :D :D ");
+										Status st = Status.getStatus();
+										String fileType = st.getContentType("uploadrequest",data);
+										if(fileDownloads != null)
+										{	
+											if(fileType.length()!=0)
+												fileDownloads.put(data+"."+fileType);
+											else
+												fileDownloads.put(data);
+										}	
+										if(fileType.length()!=0)
+											st.insertData("localdata", data+"."+fileType);
+										else
+											st.insertData("localdata", data);
+										st.updateState("status",data, 0); 
+										objectIn.close();
+										boolean del = fileRead.delete();
+										System.out.println("file is deleted: "+del);
+										System.out.println("Now you can remove your drive");	
+										JFrame parent = new JFrame();
+										JOptionPane.showMessageDialog(parent, "Safely Remove Drive");
+									}
+							}
+						}
+						catch(Exception e)
+						{ 
+							System.out.println("Exception in dtnFileRead DTNReader");
+						}
+					}
+
+				}
+
+			}
+			catch(EOFException e)
+			{
+			}
+			catch(Exception e)
+			{	System.out.println("Exception in DTNReader in dtnFile Read just before finally");
+			}
+			finally
+			{	try
+				{	if(objectIn != null)
+					{	objectIn.close();
 						flag = true ;
 					}	
-				}catch(Exception e){
-					System.out.println("Exception in DTNReader.java finally block : objectIn not found");
-
+				}
+				catch(Exception e)
+				{	System.out.println("Exception in DTNReader.java finally block : objectIn not found");
 				}
 			}
 		}
 		return flag;
 	}
 }
+ */
