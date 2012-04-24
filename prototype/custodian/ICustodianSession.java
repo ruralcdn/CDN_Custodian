@@ -14,6 +14,9 @@ public interface ICustodianSession extends Remote {
 	public void upload(String data,int size) throws RemoteException;
 	public  String upload(String userContentName,int size,String dest, String userId, String fileType) throws RemoteException;
 	public  String DTNUpload(String userContentName,int size,int tcpSize,String dest, String userId, String fileType) throws RemoteException;	
+	
+	public  String DTNUpload(String userContentName,String dest, String userId, String fileType) throws RemoteException;	
+	
 	public List<Notification> poll_notification() throws RemoteException;
 	public List<String> processDynamicContent(String uploadContentId,int  uploadSize,String replyContentId,Connection.Type uploadType,Connection.Type downloadType,String dest) throws RemoteException;
 	//public long find(int AppId,String dataname,Connection.Type type, String dest) throws RemoteException;

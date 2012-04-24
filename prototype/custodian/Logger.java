@@ -8,6 +8,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -37,7 +38,10 @@ public class Logger implements ICustodian
 	StateManager stateManager;							    
 	CustodianAppStateManager appStateManager;
 	BlockingQueue<String> fileList ;
+	
 	static List<String> readingList ;
+	static Map<String,List<String>> writingListMap;
+	
 	static ArrayList<String> uploadSyncList;
 	public Logger(ICustodianLogin loginStub,StateManager sManager,CustodianAppStateManager caManager/*BlockingQueue<Map<String,List<String>>> datarequests*/,
 			DataStore st,NewStack stack,BlockingQueue<String> fileDownloads, String custodianId)
@@ -114,7 +118,7 @@ public class Logger implements ICustodian
 		if(sessionStub != null)
 		{
 			//session = new CustodianSession(username,sessionStub,stateManager,appStateManager,store,networkStack);
-			session = new CustodianSession(username,sessionStub,stateManager,appStateManager,store,networkStack, readingList, uploadSyncList);
+			session = new CustodianSession(username,sessionStub,stateManager,appStateManager,store,networkStack, readingList, writingListMap, uploadSyncList);
 			ICustodianSession custodianSessionStub = (ICustodianSession) UnicastRemoteObject.exportObject(session, 0);
 			System.out.println("User authenticated,beginning session");
 			return custodianSessionStub;
@@ -212,8 +216,9 @@ public class Logger implements ICustodian
 			BlockingQueue<String> fileDownloads = new ArrayBlockingQueue<String>(maxDownloads);   
 			//FileRegisterer registerer = new FileRegisterer(fileDownloads,AppManager);
 			readingList = new ArrayList<String>();
+			writingListMap = new HashMap<String, List<String>>();
 			uploadSyncList = new ArrayList<String>();
-			NewStack stack = new NewStack(custodianId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList);
+			NewStack stack = new NewStack(custodianId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList,writingListMap);
 
 			String RegistrarServer = AppConfig.getProperty("Custodian.UserRegistrar.IP");    
 			Registry registrarRegistry = LocateRegistry.getRegistry(RegistrarServer);

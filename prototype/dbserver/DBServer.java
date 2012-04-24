@@ -14,6 +14,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,6 +42,7 @@ public class DBServer implements IDBServer
 	static Map<String,Integer> ContentSegCount;
 	static List<String> UploadSyncList;
 	static List<String> readingList ;
+	static Map<String,List<String>> writingListMap ;
 	private boolean dblock ;
 	private String path ;
 	java.sql.Connection con;
@@ -57,6 +59,7 @@ public class DBServer implements IDBServer
 			usbStore = new DataStore(AppConfig.getProperty("DBServer.USBPath"));
 		}
 		readingList = new ArrayList<String>();
+		writingListMap = new HashMap<String,List<String>>();
 		fileName = "";
 		dbServerId = Id;
 		stateManager = new StateManager("status");
@@ -71,7 +74,7 @@ public class DBServer implements IDBServer
 			cacheConnectionPorts.add(tempPort);
 			tempPort++;
 		}
-		networkStack = new NewStack(dbServerId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList);
+		networkStack = new NewStack(dbServerId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList,writingListMap);
 		dblock = false ;
 		Class.forName("com.mysql.jdbc.Driver");
 		con = DriverManager.getConnection

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import newNetwork.Connection;
 import AbstractAppConfig.AppConfig;
 import NewStack.NewStack;
@@ -41,10 +43,11 @@ public class CustodianSession implements ICustodianSession{
 	CustodianAppStateManager appStateManager;
 	List<String> UploadSyncList;
 	List<String> readingList ;
+	Map<String,List<String>> writingListMap;
 	//public CustodianSession(String u,IUserRegistrarSession stub,StateManager sManager,CustodianAppStateManager caManager
 		//	,DataStore st,NewStack stack)
 	public CustodianSession(String u,IUserRegistrarSession stub,StateManager sManager,CustodianAppStateManager caManager
-			,DataStore st,NewStack stack, List<String> readList, List<String> uploadSync)
+			,DataStore st,NewStack stack, List<String> readList, Map<String,List<String>> writeListMap, List<String> uploadSync)
 	{
 		userId = u;
 		sessionStub = stub;
@@ -54,6 +57,7 @@ public class CustodianSession implements ICustodianSession{
 		networkStack = stack;
 		UploadSyncList = uploadSync;
 		readingList = readList ;
+		writingListMap = writeListMap;
 		System.out.println("Session established userId: "+userId);
 		String config = new String("config/Custodian.cfg");
 		File configFile = new File(config);
@@ -268,7 +272,7 @@ public class CustodianSession implements ICustodianSession{
 			Registry dataServerRegistry = LocateRegistry.getRegistry(AppConfig.getProperty("Custodian.DataConnection.Server"));
 			IDataServer dataServerStub = null;
 			
-			System.out.println("Finding DataService.");	
+			System.out.println("Finding DataService Level 1 .");	
 						
 			try
 			{
@@ -304,6 +308,119 @@ public class CustodianSession implements ICustodianSession{
 		}
 		return contentName;	
 	}
+	
+	// CODE ADDED FOR USB TESTING-AMIT DUBEY
+	
+	
+	public  String DTNUpload(String userContentName,String dest, String userId, String fileType) throws RemoteException
+	{
+		System.out.println("Inside CustodianSession.java: DTNUpload FOR USB");
+		System.out.println("usercontent: "+userContentName);
+		System.out.println("filetype: "+fileType);
+		String contentName = null;
+		try
+		{
+			//size = size*10;
+			int dtnSize = Integer.parseInt(AppConfig.getProperty("NetworkStack.dtnSegmentSize"));
+			int tcpSize = Integer.parseInt(AppConfig.getProperty("NetworkStack.SegmentSize"));
+			int scale = dtnSize/tcpSize ;
+			
+			Registry registry = LocateRegistry.getRegistry(AppConfig.getProperty("Custodian.Rendezvous.IP"));    
+			String rendezvousService = AppConfig.getProperty("Custodian.Rendezvous.Service");
+			IRendezvous stub = null;
+			System.out.println("Finding Rendezvous Service.");			
+			try
+			{
+				stub = (IRendezvous) registry.lookup(rendezvousService);
+				
+			}
+			catch(Exception ex)
+			{
+				return "RendezvousNotFound";
+				
+			}
+			
+			System.out.println("Rendezvous Service Found.");				
+			List<String> l = stub.find(dest+"$serviceInstance");
+			String serviceInstanceInfo = "";
+			try{
+				serviceInstanceInfo = l.get(0);
+			}catch(Exception ex){
+				System.out.println("Exception Obtaining Service Instance Information in Custodian Session.");	
+			}
+			
+			System.out.println("response from rendezvous:  "+l);	
+
+			File f = new File("config/output.cfg");
+			FileOutputStream fop = new FileOutputStream(f);;				
+			if(f.exists())
+			{
+		          String str=l.toString();
+		          fop.write(str.getBytes());
+		          fop.flush();
+		          fop.close();
+			}
+			String[] connectionInfo = serviceInstanceInfo.split(":");
+			String IP = connectionInfo[0];
+			System.out.println("IP = "+IP);
+			Registry serverRegistry = LocateRegistry.getRegistry(IP);
+			IUploader serverStub = null;
+			System.out.println("Finding ServiceInstance.");			
+			try
+			{
+				serverStub = (IUploader) serverRegistry.lookup(AppConfig.getProperty("Custodian.ServiceInstance.UploaderService") );    //should be config driven
+			
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
+				return "ServiceInstanceNotFound";
+			}
+			
+			System.out.println("ServiceInstance Found.");
+			
+			//generating content id
+			
+			contentName = serverStub.generateContentId();
+			
+			System.err.println("contentname value: "+contentName);
+			int count = contentName.indexOf('$'); 
+			userContentName = userContentName+"$"+contentName.substring(count+1);
+			Registry dataServerRegistry = LocateRegistry.getRegistry("myDataServer");
+			IDataServer dataServerStub = null;
+			System.out.println("Finding DataService Level 2.");	
+			try
+			{
+				dataServerStub = (IDataServer) dataServerRegistry.lookup(AppConfig.getProperty("Custodian.DataServer.Service") );    //should be config driven			
+			}
+			catch(Exception ex)
+			{
+				return "DataServerNotFound";
+			}			
+			dataServerStub.upload(contentName,userId,fileType);
+            System.out.println("After Calling dataServerStub.upload(): CacheServer.java");
+            List<String> destinations = new ArrayList<String>();
+            String hop = AppConfig.getProperty("Custodian.DataConnection.Server")+":"+AppConfig.getProperty("Custodian.DataConnection.port");
+           	destinations.add(hop);
+			ContentState downloadStateObject = new ContentState(contentName,0,
+					-1,null,0,ContentState.Type.tcpDownload,networkStack.getStackId(), true);
+			/*ContentState uploadStateObject = new ContentState(contentName,contentName,0,new BitSet(size*scale),
+					Connection.Type.DSL.ordinal(),destinations,size*scale,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);*/
+			ContentState uploadStateObject = new ContentState(contentName,contentName,0,
+					Connection.Type.DSL.ordinal(),destinations,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);
+			String fullName = contentName +"."+fileType;
+			//UploadSyncList.add(fullName);
+			readingList.add(contentName);
+			stateManager.setStateObject(downloadStateObject);
+			stateManager.setTCPUploadState(uploadStateObject, fileType);
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+			return contentName;
+		}		
+		return contentName;
+	}
+	
 	
 	public  String DTNUpload(String userContentName,int size,int smSize,String dest, String userId, String fileType) throws RemoteException
 	{
@@ -369,13 +486,18 @@ public class CustodianSession implements ICustodianSession{
 				return "ServiceInstanceNotFound";
 			}
 			
-			System.out.println("ServiceInstance Found.");	
+			System.out.println("ServiceInstance Found.");
+			
+			//generating content id
+			
 			contentName = serverStub.generateContentId();
+			
+			System.err.println("contentname value: "+contentName);
 			int count = contentName.indexOf('$'); 
 			userContentName = userContentName+"$"+contentName.substring(count+1);
 			Registry dataServerRegistry = LocateRegistry.getRegistry("myDataServer");
 			IDataServer dataServerStub = null;
-			System.out.println("Finding DataService.");	
+			System.out.println("Finding DataService Level 3.");	
 			try
 			{
 				dataServerStub = (IDataServer) dataServerRegistry.lookup(AppConfig.getProperty("Custodian.DataServer.Service") );    //should be config driven			
@@ -387,6 +509,10 @@ public class CustodianSession implements ICustodianSession{
 
 			System.out.println("DataService Found.");		
 			//dataServerStub.upload(contentName, size*scale, userId,fileType);
+			System.err.println("contentName value:"+contentName);
+			System.err.println("smSize value:"+smSize);
+			System.err.println("userId value:"+userId);
+			System.err.println("fileType value:"+fileType);
 			dataServerStub.upload(contentName, smSize, userId,fileType);
             System.out.println("After Calling dataServerStub.upload(): CacheServer.java");
             List<String> destinations = new ArrayList<String>();
@@ -394,8 +520,8 @@ public class CustodianSession implements ICustodianSession{
            	destinations.add(hop);
 			ContentState downloadStateObject = new ContentState(contentName,0,new BitSet(size),
 					-1,null,size,0,ContentState.Type.tcpDownload,networkStack.getStackId(), true);
-			/*ContentState uploadStateObject = new ContentState(contentName,contentName,0,new BitSet(size*scale),
-					Connection.Type.DSL.ordinal(),destinations,size*scale,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);*/
+			//ContentState uploadStateObject = new ContentState(contentName,contentName,0,new BitSet(size*scale),
+					//Connection.Type.DSL.ordinal(),destinations,size*scale,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);
 			ContentState uploadStateObject = new ContentState(contentName,contentName,0,new BitSet(smSize),
 					Connection.Type.DSL.ordinal(),destinations,smSize,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);
 			String fullName = contentName +"."+fileType;
@@ -408,7 +534,8 @@ public class CustodianSession implements ICustodianSession{
 			e.printStackTrace();
 			return contentName;
 		}
-		return contentName;	
+		System.err.println("contentName value: "+contentName);
+		return contentName;
 	}
 	private void notifyNeighborCaches(String contentName)
 	{
@@ -442,33 +569,57 @@ public class CustodianSession implements ICustodianSession{
 	public long find(int AppId,String dataname,Connection.Type type, String dest, int popContent) throws RemoteException
 	{
 		
-		System.out.println("Find request received by user on "+dataname);
+		System.out.println("Find request received by user on = "+dataname);
+		System.out.println("store = "+store);
+		
+		// add userId based download list
+		String user = dest.substring(0, dest.lastIndexOf(":"));
+		System.out.println("User = " + user);
+		List<String> writingList;
+		writingList = writingListMap.get(user);
+		if(writingList == null)
+		{
+			writingList = new ArrayList<String>();
+			
+		}
+		writingList.add(dataname);
+		writingListMap.put(user, writingList);
+		
+		
+		System.out.println("Popcontent = "+ popContent);
 		if(store.contains(dataname) || popContent == 0)
 		{
-			if(popContent == 0){
-				
+			if(popContent == 0)
+			{
+				System.out.println("Inside 111");
+				System.out.println("Popcontent = "+ popContent);
 				return 1 ;
 			}
 				
 			if(type == Connection.Type.USB)
 			{
+				System.out.println("Inside 222");
 				List<String> destinations = new ArrayList<String>();
 				destinations.add(dest);
 				int size = networkStack.countdtnSegments(dataname);
 				ContentState uploadStateObject = new ContentState(dataname,dataname,0, new BitSet(size),
 						Connection.Type.USB.ordinal(),destinations,size,0,ContentState.Type.dtn,networkStack.getStackId(),true);
+				System.out.println("hi");
 				stateManager.setDTNDownState(uploadStateObject);
 				//return 1;
+				
 				return size ;
 			}
 			else
 			{
+				System.out.println("Inside 333");
 				List<String> destinations = new ArrayList<String>();
 				destinations.add(dest);
 				int size = networkStack.countSegments(dataname);
 				ContentState uploadStateObject = new ContentState(dataname,dataname,0, new BitSet(size),
 						Connection.Type.DSL.ordinal(),destinations,size,0,ContentState.Type.tcpUpload,networkStack.getStackId(),true);
 				stateManager.setTCPDownloadState(uploadStateObject);
+				
 				return size;
 			}
 		}
@@ -476,6 +627,7 @@ public class CustodianSession implements ICustodianSession{
 		{
 			try
 			{
+				System.out.println("Inside 444");
 				System.out.println("Requesting rendezvous");
 				Registry registry = LocateRegistry.getRegistry(AppConfig.getProperty("Custodian.Rendezvous.IP"));    
 				String rendezvousService = AppConfig.getProperty("Custodian.Rendezvous.Service");
@@ -496,11 +648,13 @@ public class CustodianSession implements ICustodianSession{
 				int size = 1;
 				if(l != null)
 				{
+					System.out.println("Inside 555");
 					String cache = null ;
 					for(int i = 0; i < l.size() ; i++){
 						String temp = l.get(i);
-						if(temp.contains("myDataServer")){
+						if(temp.contains("10.22.6.90")){//myDataServer
 							cache = temp ;
+							
 							break ;
 						}	 
 					} 
@@ -535,9 +689,12 @@ public class CustodianSession implements ICustodianSession{
 					}
 					else
 					{
+						System.out.println("Inside 666");
 						//if(cacheStub.DTNRead(1,dataname,userId,networkStack.getStackId()))
-						if(cacheStub.DTNRead(1,dataname,"user",networkStack.getStackId()))
+						if(cacheStub.DTNRead(1,dataname,"user",networkStack.getStackId())){
+							System.out.println("Hi");
 							return 1;
+						}
 						else
 							return -1;
 					}

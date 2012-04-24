@@ -266,6 +266,7 @@ public class StateManager{
 		setStateObject1(stateObj);
 		Status st = Status.getStatus();
 		String contentId = stateObj.getContentId();
+		System.out.println("contentid"+contentId);
 		downloadRequest = st.setDownloadRequests("downloadrequest", contentId,0);
 		System.out.println("Download request is: "+downloadRequest);
 		rmiServer = NewStack.getRMIServer();
@@ -362,14 +363,14 @@ public class StateManager{
 		setStateObject1(stateObj);
 		Status st = Status.getStatus();
 		String contentId = stateObj.getContentId();
-		//System.out.println("In setTCPDownloadState method");
+		System.out.println("In setTCPDownloadState method");
 		List<String> downReq  = new ArrayList<String>();
 		boolean flag = true;
 		downReq = st.getDownloadRequests("dtndownrequest");
 		if(downReq .size()>=1)
 			flag = false ;
 		dtndownRequest = st.setDownloadRequests("dtndownrequest", contentId,0);
-		System.out.println("DTN Download request is: "+dtndownRequest);
+		//System.out.println("DTN Download request is: "+dtndownRequest);
 		rmiServer = NewStack.getRMIServer();
 		if(dtndownRequest.size()==1 && flag && downloadRequest.size()==0)
 		{	

@@ -170,4 +170,11 @@ public class DataServer implements IDataServer {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+
+	@Override
+	public void upload(String data, String requester, String fileType)
+			throws RemoteException {
+		// TODO Auto-generated method stub
+		
+	}
 }

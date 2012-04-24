@@ -9,6 +9,7 @@ import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -38,6 +39,7 @@ public class CacheServer implements ICacheServer
 	static Map<String,Integer> ContentSegCount;
 	static List<String> UploadSyncList;
 	List<String> readingList ; //For DTN receiver 
+	Map<String,List<String>> writingListMap ;
 	//DBSync dbSync ;
 	public CacheServer(String Id) throws Exception 
 	{
@@ -56,6 +58,7 @@ public class CacheServer implements ICacheServer
 		AppManager = new ServiceInstanceAppStateManager();
 		UploadSyncList = new ArrayList<String>();
 		readingList = new ArrayList<String>();
+		writingListMap = new HashMap<String,List<String>>();
 		//dbSync = new DBSync(6789);
 		int maxDownloads = Integer.parseInt(AppConfig.getProperty("CacheServer.MaximumDownloads"));
 		BlockingQueue<String> fileDownloads = new ArrayBlockingQueue<String>(maxDownloads);   
@@ -73,7 +76,7 @@ public class CacheServer implements ICacheServer
 			tempPort++;
 		}
 		//networkStack = new NewStack(cacheId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts);
-		networkStack = new NewStack(cacheId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList);
+		networkStack = new NewStack(cacheId,stateManager,store,usbStore,fileDownloads,port,cacheConnectionPorts,readingList,writingListMap);
 		
 	}
 
@@ -155,7 +158,7 @@ public class CacheServer implements ICacheServer
 			Registry dataServerRegistry = LocateRegistry.getRegistry("myDataServer");
 			IDataServer dataServerStub = null;
 			
-			System.out.println("Finding DataService.");	
+			System.out.println("Finding DataService level 4.");	
 						
 			try
 			{
@@ -164,6 +167,7 @@ public class CacheServer implements ICacheServer
 			catch(Exception ex)
 			{
 				return "DataServerNotFound";
+				
 			}
 
 			System.out.println("DataService Found.");		
@@ -273,7 +277,7 @@ public class CacheServer implements ICacheServer
 			Registry dataServerRegistry = LocateRegistry.getRegistry("myDataServer");
 			IDataServer dataServerStub = null;
 			
-			System.out.println("Finding DataService.");	
+			System.out.println("Finding DataService Level 5.");	
 						
 			try
 			{
@@ -333,10 +337,13 @@ public class CacheServer implements ICacheServer
 	{
 		
 		System.out.println("Find request received by user on "+dataname);
+		System.out.println("store"+store);
 		if(store.contains(dataname))
 		{
+			System.out.println("Finding" +dataname);
 			if(type == Connection.Type.USB)
 			{
+				System.out.println("Finding usb");
 				List<String> destinations = new ArrayList<String>();
 				destinations.add(dest);
 				int size = networkStack.countSegments(dataname);

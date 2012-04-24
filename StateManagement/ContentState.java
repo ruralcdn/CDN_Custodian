@@ -34,6 +34,21 @@ public class ContentState{
 		sendMetaDataFlag = sendMetaData;
 	}
 	
+	//for USB modification
+	
+	public ContentState(String content,int off,int conInterface,List<String> route,int curSeg,Type type,String appId,boolean sendMetaData){
+		contentId = content;
+		//bitMap = bits;
+		offset = off;
+		preferredInterface = conInterface;
+		preferredRoute = route;
+		//totalSegments = size;
+		currentSegments = curSeg ;
+		stateType = type;
+		AppId = appId;
+		sendMetaDataFlag = sendMetaData;
+	}
+	
 	public ContentState(String contentName,String uploadName,int off,BitSet bits,int conInterface,List<String> route,int size,int curSeg,Type type,String appId,boolean sendMetaData)
 	{
 		if((type == Type.tcpUpload) || (type == Type.dtn))
@@ -45,6 +60,25 @@ public class ContentState{
 			preferredInterface = conInterface;
 			preferredRoute = route;
 			totalSegments = size;
+			currentSegments = curSeg ;
+			stateType = type;
+			AppId = appId;
+			sendMetaDataFlag = sendMetaData;
+
+		}
+	}
+	//FOR USB MODIFICATION
+	public ContentState(String contentName,String uploadName,int off,int conInterface,List<String> route,int curSeg,Type type,String appId,boolean sendMetaData)
+	{
+		if((type == Type.tcpUpload) || (type == Type.dtn))
+		{
+			contentId = contentName;
+			uploadId = uploadName;
+			//bitMap = bits;
+			offset = off;
+			preferredInterface = conInterface;
+			preferredRoute = route;
+			//totalSegments = size;
 			currentSegments = curSeg ;
 			stateType = type;
 			AppId = appId;

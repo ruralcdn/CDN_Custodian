@@ -23,7 +23,8 @@ import StateManagement.Status;
 public class NewStack
 {
 	private String stackId;
-	DTNReader dtnReader ;
+	DTNReader dtnReader;
+	DTNWriter dtnWriter;
 	private StateManager stateManager;
 	private DataStore store;
 	private LinkDetector detector;
@@ -67,7 +68,7 @@ public class NewStack
 		}	
 	}
 	
-	public NewStack(String localId,StateManager manager,DataStore dStore,DataStore usbStore,BlockingQueue<String> downloads,int serverPort,List<Integer> connectionPorts, List<String> readList)
+	public NewStack(String localId,StateManager manager,DataStore dStore,DataStore usbStore,BlockingQueue<String> downloads,int serverPort,List<Integer> connectionPorts, List<String> readList, Map<String,List<String>> writeListMap)
 	{
 		stackId = localId;
 		stateManager = manager;
@@ -90,14 +91,16 @@ public class NewStack
 			System.out.println("Starting the Uploader with size: "+size);
 			uploader.start();
 		}	
-		if(stateManager.getTCPDownloadRequests().size()!= 0){
+		if(stateManager.getTCPDownloadRequests().size()!= 0)
+		{
 			controlServer.start();
 			List<String> downloadRequest = new ArrayList<String>();
 			Map<String,List<ContentState>> contUpMultiMap = new HashMap<String,List<ContentState>>();
 			contUpMultiMap = stateManager.getcontUpMultiMap();
 			downloadRequest = stateManager.getTCPDownloadRequests();
 			//System.out.println("Size of download request"+downloadRequest.size());
-			if(downloadRequest.size()!= 0){
+			if(downloadRequest.size()!= 0)
+			{
 				for(int i = 0 ; i < downloadRequest.size() ;i++){
 					String content = downloadRequest.get(i);
 					List<ContentState> lists = new ArrayList<ContentState>();
@@ -140,8 +143,11 @@ public class NewStack
 			
 			System.out.println("Starting the RMI server");
 		}	
-		dtnReader = new DTNReader(readList,stateManager,store,dtnsegmentSize,downloads);
-		dtnReader.start();	
+		//dtnReader = new DTNReader(readList, stateManager,store,dtnsegmentSize,downloads);
+		//dtnReader.start();	
+		
+		dtnWriter = new DTNWriter(readList,writeListMap,stateManager,store,dtnsegmentSize,downloads);
+		dtnWriter.start();
 	}
 
 	public NewStack(String localId,StateManager manager,DataStore dStore,BlockingQueue<String> downloads)

@@ -164,7 +164,7 @@ public class LinkDetector extends Thread{
 						}
 						catch (IOException e)
 						{
-							System.out.println("Link Failure occured");
+							//System.out.println("Link Failure occured");
 							if(!flag)
 							{
 								mpUp = StateManager.getUpMap();

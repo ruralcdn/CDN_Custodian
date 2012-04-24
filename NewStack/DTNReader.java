@@ -5,12 +5,21 @@ import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+
+import AbstractAppConfig.AppConfig;
 import StateManagement.ContentState;
 import StateManagement.StateManager;
-import StateManagement.Status;
 import prototype.datastore.DataStore;
+import java.net.*;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import java.io.FileInputStream;
+import java.io.IOException;
+
 //import javax.swing.* ;
 
 
@@ -22,7 +31,6 @@ public class DTNReader extends Thread {
 	DataStore store ;
 	StateManager stateManager;
 	int segmentSize;
-	private BlockingQueue<String> fileDownloads;
 	Map<String, ContentState> mpContent;
 	String[] letters = new String[]{ "A", "B", "C", "D", "E", "F", "G", "H", "I", 
 			"J", "K", "L", "M", "N", "O", "P", "Q", "R",
@@ -31,13 +39,14 @@ public class DTNReader extends Thread {
 
 	boolean[] isDrive = new boolean[letters.length];
 
+
+
 	public DTNReader(List<String> dtnReadList, StateManager stmgr,DataStore dstore, int segment, BlockingQueue<String> downloads){
 		osName= System.getProperty("os.name");
 		readingList = dtnReadList ;
 		store = dstore;
 		stateManager = stmgr ;
 		segmentSize = segment ;
-		fileDownloads = downloads ;
 		mpContent = new HashMap<String, ContentState>();
 		for (int i = 0; i < letters.length; ++i )
 		{
@@ -107,26 +116,47 @@ public class DTNReader extends Thread {
 								}*/
 								String filePathStr = letters[i] + ":\\DTNRouter\\";
 								File dtnDir = new File(filePathStr);
-								String[] dataList = dtnDir.list(); 
+								String[] dataList = dtnDir.list(); //List of contents of USB Drive.
+								
+								//System.out.println("Contents of ReadingList = "+readingList.get(j))
 								for(int j = 0; j < dataList.length ; j++)
 								{
-									if(readingList.contains(dataList[j])){
-										//String fileName = readingList.remove(0) ;
-										String fileName = dataList[j];
-										filePathStr = filePathStr+fileName;
-										System.out.println("File Name is: "+filePathStr);
-										if(dtnFileRead(filePathStr)){
-											System.out.println("File is successfully read");
-											readingList.remove(dataList[j]);
-										}	
-										else{
-											try {
-												Thread.sleep(1000);//changed 2000 TO 1000
-											} catch (Exception e) {
-												e.printStackTrace();
-											}
-										}	
-										System.out.println("Reading List size is: "+readingList.size());
+									for(int k =0;k<readingList.size();k++) 
+									{
+										//System.out.println("111. dataList = " + dataList[j]);
+										
+										String fileNameExt = dataList[j].substring(dataList[j].lastIndexOf("."), dataList[j].length()); //ext of USB Drive contents.
+										
+										dataList[j] = dataList[j].substring(0, dataList[j].lastIndexOf("."));
+										//if( k == 0)
+										//readingList.set(k,readingList.get(k)+fileNameExt); 
+										//System.out.println("ReadingList = " + readingList);
+										System.out.println("ReadingList = " + readingList.get(k));
+										//System.out.println("222. dataList = " + dataList[j]);
+										if(readingList.get(k).contains(dataList[j]))
+										{
+											String fileName = readingList.remove(0) ;										
+											filePathStr = null;
+											filePathStr = letters[i] + ":\\DTNRouter\\"+fileName + fileNameExt;
+											
+											System.out.println("File Name is: "+filePathStr);
+											if(dtnFileRead(filePathStr))
+											{
+												System.out.println("File is successfully read");
+												readingList.remove(dataList[j]);
+											}	
+											else
+											{
+												//System.out.println("catch File Name is: "+filePathStr);
+												try {
+													Thread.sleep(1000);//changed 2000 TO 1000
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											}	
+											//System.out.println("Reading List size is: "+readingList.size());
+										}
+									
 									}
 								}
 								/*System.out.println("Now you can remove your drive");	
@@ -136,7 +166,7 @@ public class DTNReader extends Thread {
 							} 
 							catch (IOException e) 
 							{
-								System.out.println("Error in reading or writing file");
+								//System.out.println("Error in reading or writing file");
 								try {
 									Thread.sleep(5000);
 								} catch (InterruptedException e1) {
@@ -216,7 +246,7 @@ public class DTNReader extends Thread {
 										e.printStackTrace();
 									}
 								}	
-								System.out.println("Reading List size is: "+readingList.size());
+								//System.out.println("Reading List size is: "+readingList.size());
 							}
 						}
 					}catch(Exception e){
@@ -279,8 +309,98 @@ public class DTNReader extends Thread {
 		return false ;  	
 	}
 
+	//commented by amit
 
-	private boolean dtnFileRead(String filePathStr)
+	private boolean dtnFileRead(String filePathStr) throws IOException{
+		
+		boolean flag =  false;
+		System.out.println("Ready to move file");
+		System.out.println("filepathstr:"+filePathStr);
+		int lastIndex = filePathStr.lastIndexOf("\\");
+		String fname = "";
+		fname = filePathStr.substring(lastIndex+1, filePathStr.length());	
+		
+		
+		System.out.println("Ready to move file:"+fname);
+		FileChannel source = null;
+		FileChannel destination = null;
+
+		File configFile = new File("config/Custodian.cfg");
+		FileInputStream fconfig;
+		fconfig = new FileInputStream(configFile);
+		new AppConfig();
+		AppConfig.load(fconfig);
+		fconfig.close();	
+		
+		String Dir = AppConfig.getProperty("Custodian.Directory.Path");
+
+		try{
+			source = new FileInputStream(filePathStr).getChannel();
+			destination = new FileOutputStream(Dir+fname).getChannel();
+			try{
+				destination.transferFrom(source, 0, source.size());
+				
+				flag = true;
+			}catch(Exception ex){
+				ex.printStackTrace();
+			}
+		}
+		finally{
+			if(source != null){
+				source.close();
+			}
+			if(destination != null){
+				destination.close();
+			}
+		}		
+
+		File afile = new File(filePathStr);
+		afile.delete();//delete file form usb
+
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Image image = toolkit.getImage(AppConfig.getProperty("Custodian.Usb.Image.Path"));//
+		TrayIcon trayIcon = new TrayIcon(image, "TrayIcon");
+
+		SystemTray tray = SystemTray.getSystemTray();
+		try
+		{
+			tray.add(trayIcon);
+		}
+		catch (Exception e)
+		{
+			System.err.println("TrayIcon could not be added.");							           
+		}
+
+		trayIcon.displayMessage("Remove USB", "Please Safely remove your usb Drive", TrayIcon.MessageType.INFO);
+
+		/**
+		 * code for uploading the file using ftp	
+		 */
+		FTPClient client = new FTPClient();
+		FileInputStream fis = null;
+		client.connect(AppConfig.getProperty("Custodian.Directory.Path"));
+		client.login(AppConfig.getProperty("Custodian.FTP.Username"), AppConfig.getProperty("Custodian.FTP.Password"));////
+
+		String filename = Dir+fname;	
+		client.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
+		client.setFileTransferMode(FTP.BINARY_FILE_TYPE);
+
+		try{
+			fis = new FileInputStream(filename);		
+			client.storeFile(fname, fis);    
+			fis.close();
+			client.logout();
+		}catch(Exception ex){
+			//ex.printStackTrace();
+			System.out.println("FTP");
+		}
+		System.out.println("your file with id "+fname+"successfully uploaded to server");
+
+
+		return flag;
+
+	}
+	/*private boolean dtnFileRead(String filePathStr)
 	{
 		System.out.println("Start Dtnreader");
 		boolean flag = false ;
@@ -420,7 +540,74 @@ public class DTNReader extends Thread {
 			}
 		}
 		return flag;
+	}*/
+
+	public boolean ftpclient(String filename) throws IOException, IOException{
+
+		Socket soc=new Socket("10.22.6.90",5217);
+		boolean flag = false;
+		Socket ClientSoc;
+
+		DataInputStream din = null;
+		DataOutputStream dout = null;
+		BufferedReader br = null;		
+
+		try
+		{
+			ClientSoc=soc;
+			din=new DataInputStream(ClientSoc.getInputStream());
+			dout=new DataOutputStream(ClientSoc.getOutputStream());
+			br=new BufferedReader(new InputStreamReader(System.in));
+		}
+		catch(Exception ex)
+		{
+		}
+
+		dout.writeUTF("SEND");		
+
+		File f=new File(filename);
+		if(!f.exists())
+		{
+			System.out.println("File not Exists...");
+			dout.writeUTF("File not found");
+			return flag;
+		}
+
+		dout.writeUTF(filename);
+
+		String msgFromServer=din.readUTF();
+		if(msgFromServer.compareTo("File Already Exists")==0)
+		{
+			String Option;
+			System.out.println("File Already Exists. Want to OverWrite (Y/N) ?");
+			Option=br.readLine();			
+			if(Option=="Y")	
+			{
+				dout.writeUTF("Y");
+			}
+			else
+			{
+				dout.writeUTF("N");
+				return flag;
+			}
+		}
+
+		System.out.println("Sending File ...");
+		FileInputStream fin=new FileInputStream(f);
+		int ch;
+		do
+		{
+			ch=fin.read();
+			dout.writeUTF(String.valueOf(ch));
+		}
+		while(ch!=-1);
+		fin.close();
+		System.out.println(din.readUTF());
+
+		return false;
+
 	}
+
 }
 
 /*

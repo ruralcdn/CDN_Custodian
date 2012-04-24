@@ -2,7 +2,7 @@ package prototype.datastore;
 
 import java.io.*;
 
-import StateManagement.Status;
+
 
 public class DataStore{
 		
@@ -16,17 +16,18 @@ public class DataStore{
 	{
 		return dirPath;
 	}
-	/*public boolean contains(String dataname)
+	public boolean contains(String dataname)
 	{
 		File file = new File(dirPath+dataname);
 		return file.exists();
-	}*/
-	public boolean contains (String dataname){
+	}
+	/*public boolean contains (String dataname){
+		System.out.println("dtaname"+dataname);
 		boolean exists = false;
 		Status st = Status.getStatus();
 		exists = st.containsData("localdata", dataname);
 		return exists ;
-	}
+	}*/
 	public File getFile(String dataname)
 	{
 		return (new File(dirPath+dataname));
@@ -131,6 +132,7 @@ public class DataStore{
 	public synchronized boolean write(String dataname,long offset,byte[] data)
 	{
 		File file = new File(dirPath+dataname);
+		//System.out.println("filename write"+file);
 		RandomAccessFile accessFile;
 		try {
 			accessFile = new RandomAccessFile(file,"rw");

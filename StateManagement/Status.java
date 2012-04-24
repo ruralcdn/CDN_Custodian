@@ -187,7 +187,7 @@ public class Status{
 	public void updateState(String table, String contentId, int type){
 		
 		try{
-			System.out.println("In updateStae for deleteing the status");		
+			//System.out.println("In updateStae for deleteing the status");		
 			prep= con.prepareStatement("delete from "+table+" where contentid = ? " +
 					"and type = ?");
 			prep.setString(1,contentId);
